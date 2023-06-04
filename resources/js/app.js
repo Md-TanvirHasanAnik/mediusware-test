@@ -7,6 +7,9 @@
 require("./bootstrap");
 require("./sb-admin");
 import Vue from "vue";
+import VueSweetalert2 from "vue-sweetalert2";
+import "bootstrap/dist/css/bootstrap.css";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 /**
  * The following block of code may be used to automatically register your
@@ -23,6 +26,7 @@ Vue.component(
     "create-product",
     require("./components/CreateProduct.vue").default
 );
+Vue.use(VueSweetalert2);
 
 /**
  * Next, we will create a fresh Vue application instance and attach it to

@@ -200,7 +200,9 @@ export default {
                 axios.put(`/product/${this.product.id}`, product).then(response => {
                     if (response.data.status == 200) {
                         console.log('success');
-                        window.location.href = `/product/${this.product.id}/edit`;
+                        this.$swal('Product Updated!').then(() => {
+                            window.location.href = "/product";
+                        });
                     }
                 }).catch(error => {
                     console.log(error);
@@ -221,7 +223,9 @@ export default {
                 axios.post('/product', product).then(response => {
                     if (response.data.status == 200) {
                         console.log('success');
-                        window.location.href = "/product";
+                        this.$swal('Product Added!').then(() => {
+                            window.location.href = "/product";
+                        });
                     }
                 }).catch(error => {
                     console.log(error);

@@ -7,6 +7,8 @@ use App\Models\ProductVariant;
 use App\Models\ProductVariantPrice;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductController extends Controller
 {
@@ -63,6 +65,64 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+
+        DB::beginTransaction();
+        try {
+
+            $product = new Product();
+            $product->fill($request->all());
+            $product->save();
+
+            //Product Variants
+            if ($request->get('product_variant')) {
+                $product_variants = $product->product_variants =  collect($request->get('product_variant'))->map(function ($prodVar) use ($product) {
+
+                    return collect($prodVar['tags'])->map(function ($tag) use ($prodVar, $product) {
+
+                        $pVar = new ProductVariant();
+                        $pVar->fill([
+                            'variant' => $tag,
+                            'variant_id' => $prodVar['option'],
+                            'product_id' => $product->id,
+                        ])->save();
+                        return $pVar;
+                    })->pluck('variant', 'id');
+                });
+
+
+                if ($request->get('product_variant_prices')) {
+
+                    $product_variant_prices = $product->product_variant_prices =  collect($request->get('product_variant_prices'))->map(function ($prodVarPrice) use ($product, $product_variants) {
+
+                        $titles = explode('/', $prodVarPrice['title']);
+                        $product_variant_one = $this->getVariantIdByTitle($product_variants, $titles, 0);
+                        $product_variant_two = $this->getVariantIdByTitle($product_variants, $titles, 1);
+                        $product_variant_three = $this->getVariantIdByTitle($product_variants, $titles, 2);
+
+                        $pVarPrice = new ProductVariantPrice();
+                        $pVarPrice->fill([
+                            'product_variant_one' => $product_variant_one ?? null,
+                            'product_variant_two' => $product_variant_two ?? null,
+                            'product_variant_three' => $product_variant_three ?? null,
+                            'price' => $prodVarPrice['price'],
+                            'stock' => $prodVarPrice['stock'],
+                            'product_id' => $product->id
+                        ])->save();
+                    });
+                }
+            }
+
+            $response = [
+                'message' => $product,
+                'status' => Response::HTTP_OK
+            ];
+            DB::commit();
+
+            return response()->json($response, Response::HTTP_OK);
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            return response()->json($exception->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
 
@@ -109,5 +169,30 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         //
+    }
+
+    public function getProductVariant($id)
+    {
+
+        $variants = ProductVariant::with('variantType')->where('product_id', $id)->get()
+            ->groupBy('variantType.title')
+            ->map(function ($item) {
+
+                return  [
+                    'option' => $item->first()->variantType->id,
+                    'tags' => $item->pluck('variant'),
+                    'tagsWithId' => $item->pluck('variant', 'id')
+                ];
+            })->values();
+
+        return response()->json($variants);
+    }
+    public function getVariantIdByTitle($product_variants, $titles, $index)
+    {
+        if (isset($product_variants[$index]) && isset($titles[$index])) {
+            return collect($product_variants[$index])->search($titles[$index]);
+        } else {
+            return null;
+        }
     }
 }

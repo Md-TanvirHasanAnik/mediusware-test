@@ -18,4 +18,16 @@ class Product extends Model
         return $this->hasMany(ProductVariantPrice::class);
     }
 
+    public function scopeSearchProduct($query, $request)
+    {
+        return $query->when($request->title, function($q) use($request) {
+             $q->where('title','like', '%'.$request->title.'%');
+        })
+        ->when($request->date, function($q) use($request) {
+             $q->whereDate('created_at',$request->date);
+        });
+    }
+
+
+
 }

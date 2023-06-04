@@ -28,10 +28,10 @@ class ProductController extends Controller
                 });
             },
         ])
-
+            ->searchProduct($request)
             ->paginate(4);
 
-        $variants = Variant::with('productVariant')
+        $variantTypes = Variant::with('productVariant')
             ->get()
             ->map(function ($item) {
                 return (object) [
@@ -41,7 +41,7 @@ class ProductController extends Controller
                 ];
             });
 
-        return view('products.index', compact('products', 'variants'));
+        return view('products.index', compact('products', 'variantTypes'));
     }
 
     /**

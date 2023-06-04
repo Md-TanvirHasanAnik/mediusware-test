@@ -8,14 +8,21 @@
 
 
 <div class="card">
-    <form action="" method="get" class="card-header">
+    <form action="{{ route('product.index') }}" method="get" class="card-header">
         <div class="form-row justify-content-between">
             <div class="col-md-2">
                 <input type="text" name="title" placeholder="Product Title" class="form-control">
             </div>
             <div class="col-md-2">
                 <select name="variant" id="" class="form-control">
-
+                    <option value="">Select A Variant</option>
+                    @foreach($variantTypes as $vt)
+                    <optgroup label="{{ $vt->title }}">
+                        @foreach($vt->variants as $variant)
+                        <option value="{{ $variant }}" {{ request()->get('variant')==$variant?'selected':'' }}>{{ $variant }}</option>
+                        @endforeach
+                    </optgroup>
+                    @endforeach
                 </select>
             </div>
 

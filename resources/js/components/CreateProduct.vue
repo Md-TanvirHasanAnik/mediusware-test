@@ -35,13 +35,12 @@
                         <h6 class="m-0 font-weight-bold text-primary">Variants</h6>
                     </div>
                     <div class="card-body">
-                        <div class="row" v-for="(item,index) in product_variant">
+                        <div class="row" v-for="(item, index) in product_variant">
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="">Option</label>
                                     <select v-model="item.option" class="form-control">
-                                        <option v-for="variant in variants"
-                                                :value="variant.id">
+                                        <option v-for="variant in variants" :value="variant.id">
                                             {{ variant.title }}
                                         </option>
                                     </select>
@@ -49,9 +48,9 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="form-group">
-                                    <label v-if="product_variant.length != 1" @click="product_variant.splice(index,1); checkVariant"
-                                           class="float-right text-primary"
-                                           style="cursor: pointer;">Remove</label>
+                                    <label v-if="product_variant.length != 1"
+                                        @click="product_variant.splice(index, 1); checkVariant"
+                                        class="float-right text-primary" style="cursor: pointer;">Remove</label>
                                     <label v-else for="">.</label>
                                     <input-tag v-model="item.tags" @input="checkVariant" class="form-control"></input-tag>
                                 </div>
@@ -67,22 +66,22 @@
                         <div class="table-responsive">
                             <table class="table">
                                 <thead>
-                                <tr>
-                                    <td>Variant</td>
-                                    <td>Price</td>
-                                    <td>Stock</td>
-                                </tr>
+                                    <tr>
+                                        <td>Variant</td>
+                                        <td>Price</td>
+                                        <td>Stock</td>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                <tr v-for="variant_price in product_variant_prices">
-                                    <td>{{ variant_price.title }}</td>
-                                    <td>
-                                        <input type="text" class="form-control" v-model="variant_price.price">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="form-control" v-model="variant_price.stock">
-                                    </td>
-                                </tr>
+                                    <tr v-for="variant_price in product_variant_prices">
+                                        <td>{{ variant_price.title }}</td>
+                                        <td>
+                                            <input type="text" class="form-control" v-model="variant_price.price">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" v-model="variant_price.stock">
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -110,10 +109,16 @@ export default {
         variants: {
             type: Array,
             required: true
-        }
+        },
+        product: {
+            type: Object,
+            required: false
+        },
+
     },
     data() {
         return {
+            id: '',
             product_name: '',
             product_sku: '',
             description: '',
@@ -129,10 +134,11 @@ export default {
                 url: 'https://httpbin.org/post',
                 thumbnailWidth: 150,
                 maxFilesize: 0.5,
-                headers: {"My-Awesome-Header": "header value"}
+                headers: { "My-Awesome-Header": "header value" }
             }
         }
     },
+
     methods: {
         // it will push a new object into product variant
         newVariant() {
@@ -179,29 +185,77 @@ export default {
 
         // store product into database
         saveProduct() {
-            let product = {
-                title: this.product_name,
-                sku: this.product_sku,
-                description: this.description,
-                product_image: this.images,
-                product_variant: this.product_variant,
-                product_variant_prices: this.product_variant_prices
+
+            if (this.product) { //Update
+
+                let product = {
+                    title: this.product_name,
+                    sku: this.product_sku,
+                    description: this.description,
+                    product_image: this.images,
+                    product_variant: this.product_variant,
+                    product_variant_prices: this.product_variant_prices
+                }
+
+                axios.put(`/product/${this.product.id}`, product).then(response => {
+                    if (response.data.status == 200) {
+                        console.log('success');
+                        window.location.href = `/product/${this.product.id}/edit`;
+                    }
+                }).catch(error => {
+                    console.log(error);
+                })
+
+
+            } else { //Create
+
+                let product = {
+                    title: this.product_name,
+                    sku: this.product_sku,
+                    description: this.description,
+                    product_image: this.images,
+                    product_variant: this.product_variant,
+                    product_variant_prices: this.product_variant_prices
+                }
+
+                axios.post('/product', product).then(response => {
+                    if (response.data.status == 200) {
+                        console.log('success');
+                        window.location.href = "/product";
+                    }
+                }).catch(error => {
+                    console.log(error);
+                })
+
             }
 
+        },
 
-            axios.post('/product', product).then(response => {
-                console.log(response.data);
-            }).catch(error => {
-                console.log(error);
-            })
+        getProductInfo() {
+            if (this.product) {
+                this.id = this.product.id;
+                this.product_name = this.product.title;
+                this.product_sku = this.product.sku;
+                this.description = this.product.description;
 
-            console.log(product);
+                this.product_variant = [];
+                this.product.variants.map(item => {
+                    this.product_variant.push({
+                        option: item.option,
+                        tags: item.tags
+                    })
+                });
+
+                this.product_variant_prices = this.product.variantPrices;
+
+            }
         }
 
 
     },
     mounted() {
-        console.log('Component mounted.')
+        this.getProductInfo();
+
     }
 }
 </script>

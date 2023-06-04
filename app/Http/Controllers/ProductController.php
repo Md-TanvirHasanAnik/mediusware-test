@@ -15,9 +15,33 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Http\Response|\Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('products.index');
+        $products = Product::with([
+            'productVariant' => function ($q)  use ($request) {
+                return $q->where('variant', $request->get('variant'));
+            },
+            'productVariantPrice' => function ($q) use ($request) {
+                return $q->when(($request->get('price_from') && $request->get('price_to')), function ($q) use ($request) {
+                    $q->where('price', '>=', $request->get('price_from'))
+                        ->where('price', '<=', $request->get('price_to'));
+                });
+            },
+        ])
+
+            ->paginate(4);
+
+        $variants = Variant::with('productVariant')
+            ->get()
+            ->map(function ($item) {
+                return (object) [
+                    'id' => $item->id,
+                    'title' => $item->title,
+                    'variants' => collect($item->productVariant)->pluck('variant')->unique(),
+                ];
+            });
+
+        return view('products.index', compact('products', 'variants'));
     }
 
     /**
@@ -39,7 +63,6 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-
     }
 
 
@@ -51,7 +74,6 @@ class ProductController extends Controller
      */
     public function show($product)
     {
-
     }
 
     /**

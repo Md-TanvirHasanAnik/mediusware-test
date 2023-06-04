@@ -9,5 +9,13 @@ class Product extends Model
     protected $fillable = [
         'title', 'sku', 'description'
     ];
+    public function productVariant()
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id','id');
+    }
+    public function productVariantPrice()
+    {
+        return $this->hasMany(ProductVariantPrice::class);
+    }
 
 }
